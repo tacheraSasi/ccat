@@ -7,7 +7,7 @@ pub fn main() !void {
     const cwd = fs.cwd();
     const file_open_flags = fs.File.OpenFlags{ .mode = .read_only };
     const args = std.process.argsAlloc(allocator) catch {
-        printer("Failed to allocate memory for arguments.\n", .{});
+        try printer("Failed to allocate memory for arguments.\n", .{});
         return;
     };
     defer std.process.argsFree(allocator, args);
@@ -19,14 +19,14 @@ pub fn main() !void {
 
     const buffer_size = std.math.maxInt(usize);
     const buffer = allocator.alloc(u8, buffer_size) catch {
-        printer("Failed to allocate memory for file buffer.\n", .{});
+        try printer("Failed to allocate memory for file buffer.\n", .{});
         return;
     };
 
     const bytesRead = try file.read(buffer);
     defer allocator.free(buffer);
 
-    printer("Read {} bytes from file '{}'.\n", .{bytesRead, filePath});
+    try printer("Read {} bytes from file '{}'.\n", .{bytesRead, filePath});
 
 }
 
