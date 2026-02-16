@@ -30,10 +30,10 @@ pub fn main() !void {
 
 }
 
-fn printer(fmt: []const u8, arg: anytype) !void {
+fn printer(comptime fmt: []const u8, arg: anytype) !void {
     var stdout_buf: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buf);
     const stdout: *std.io.Writer = &stdout_writer.interface;
-    try stdout.writeAll(fmt, .{arg});
+    try stdout.print(fmt, .{arg});
     try stdout.flush();
 }
