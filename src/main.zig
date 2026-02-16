@@ -3,10 +3,19 @@ const ccat = @import("ccat");
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
-    const args =  std.process.argsAlloc(allocator) catch {
+    const args = std.process.argsAlloc(allocator) catch {
         std.debug.print("Failed to allocate memory for arguments.\n", .{});
         return;
     };
     defer std.process.argsFree(allocator, args);
-    
+
+    const filePath = if (args.len > 1) args[1] else unreachable;
+}
+
+fn printer(message: []const u8) !void {
+    var stdout_buf: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buf);
+    const stdout: *std.io.Writer = &stdout_writer.interface;
+    try stdout.writeAll(message);
+    try stdout.flush();
 }
