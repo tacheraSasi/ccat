@@ -10,6 +10,10 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     const filePath = if (args.len > 1) args[1] else unreachable;
+
+    const file = try std.fs.cwd().openFile(filePath, .{ .mode = .read_only});
+    defer file.close();
+    
 }
 
 fn printer(message: []const u8) !void {
