@@ -11,9 +11,13 @@ pub fn main() !void {
 
     const filePath = if (args.len > 1) args[1] else unreachable;
 
-    const file = try std.fs.cwd().openFile(filePath, .{ .mode = .read_only});
+    const file = try std.fs.cwd().openFile(filePath, .{ .mode = .read_only });
     defer file.close();
-    
+
+    const file_content = try file.reader(std.math.maxInt(usize)).readToEndAlloc(allocator, std.math.maxInt(usize));
+    defer allocator.free(file_content);
+
+    try printer(file_content);
 }
 
 fn printer(message: []const u8) !void {
