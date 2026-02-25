@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const fs = std.fs;
 const ccat = @import("ccat");
 
@@ -34,6 +35,43 @@ pub fn main() !void {
 
     const stdout_file = std.fs.File.stdout();
     try stdout_file.writeAll(buffer[0..bytesRead]);
+}
+
+fn copy(allocator: std.mem.Allocator, content: []const u8) !void {
+    const clipboard_cmd = switch (builtin.os.tag) {
+        .macos => "pbcopy",
+        .linux => blk: {
+            if (isCommandAvailable(allocator, "wl-copy")) {
+                break :blk "wl-copy";
+            }
+            if (isCommandAvailable(allocator, "xclip")) {
+                break :blk "xclip -selection clipboard";
+            }
+            return error.NoClipboardTool;
+        },
+        else => return error.UnsupportedOS,
+    };
+
+    var process = std.process.Child.init(&[_][]const u8{clipboard_cmd}, allocator);
+    process.stdin_behavior = .Pipe;
+
+    try process.spawn();
+
+    try process.stdin.?.writeAll(content);
+    process.stdin.?.close();
+    process.stdin = null;
+
+    _ = try process.wait();
+
+    try printer("Copied: {s}\n", .{content});
+}
+
+fn isCommandAvailable(allocator: std.mem.Allocator, cmd: []const u8) bool {
+    var process = std.process.Child.init(&[_][]const u8{ "which", cmd }, allocator);
+    process.stdout_behavior = .Ignore;
+    process.stderr_behavior = .Ignore;
+    const result = process.spawnAndWait() catch return false;
+    return result.Exited == 0;
 }
 
 fn printer(comptime fmt: []const u8, arg: anytype) !void {
