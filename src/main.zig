@@ -12,6 +12,10 @@ pub fn main() !void {
     };
     defer std.process.argsFree(allocator, args);
 
+    if (args.len < 2) {
+        try printer("Usage: {s} <file_path>\n", .{args[0]});
+        return;
+    }
     const filePath = if (args.len > 1) args[1] else unreachable;
 
     const file = try cwd.openFile(filePath, file_open_flags);
@@ -24,16 +28,17 @@ pub fn main() !void {
     };
 
     const bytesRead = try file.read(buffer);
+    // _=bytesRead; // Suppress unused variable warning, since we don't do anything with the buffer in this example.
     defer allocator.free(buffer);
 
-    try printer("Read {} bytes from file '{}'.\n", .{bytesRead, filePath});
+    try printer("Read {d} bytes from file '{s}'.\n", .{bytesRead, filePath});
 
 }
 
-fn printer(comptime fmt: []const u8, arg: anytype) !void {
+fn printer(comptime fmt:[]const u8, arg: anytype) !void {
     var stdout_buf: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buf);
     const stdout: *std.io.Writer = &stdout_writer.interface;
-    try stdout.print(fmt, .{arg});
+    try stdout.print(fmt, arg);
     try stdout.flush();
 }
