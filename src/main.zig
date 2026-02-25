@@ -32,9 +32,7 @@ pub fn main() !void {
     defer allocator.free(buffer);
 
     const bytesRead = try file.read(buffer);
-
-    const stdout_file = std.fs.File.stdout();
-    try stdout_file.writeAll(buffer[0..bytesRead]);
+    try copy(allocator, buffer[0..bytesRead]);
 }
 
 fn copy(allocator: std.mem.Allocator, content: []const u8) !void {
@@ -63,7 +61,7 @@ fn copy(allocator: std.mem.Allocator, content: []const u8) !void {
 
     _ = try process.wait();
 
-    try printer("Copied: {s}\n", .{content});
+    try printer("Copied\n", .{});
 }
 
 fn isCommandAvailable(allocator: std.mem.Allocator, cmd: []const u8) bool {
