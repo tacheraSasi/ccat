@@ -21,18 +21,19 @@ pub fn main() !void {
     const file = try cwd.openFile(filePath, file_open_flags);
     defer file.close();
 
-    const buffer_size = std.math.maxInt(usize);
-    try printer("buffer size {d}\n", .{buffer_size});
-    const buffer = allocator.alloc(u8, buffer_size) catch {
+    const stat = try file.stat();
+    const file_size = stat.size;
+
+    const buffer = allocator.alloc(u8, file_size) catch {
         try printer("Failed to allocate memory for file buffer.\n", .{});
         return;
     };
-
-    const bytesRead = try file.read(buffer);
-    // _=bytesRead; // Suppress unused variable warning, since we don't do anything with the buffer in this example.
     defer allocator.free(buffer);
 
-    try printer("Read {d} bytes from file '{s}'.\n", .{ bytesRead, filePath });
+    const bytesRead = try file.read(buffer);
+
+    const stdout_file = std.fs.File.stdout();
+    try stdout_file.writeAll(buffer[0..bytesRead]);
 }
 
 fn printer(comptime fmt: []const u8, arg: anytype) !void {
