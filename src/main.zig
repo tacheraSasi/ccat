@@ -22,6 +22,7 @@ pub fn main() !void {
     defer file.close();
 
     const buffer_size = std.math.maxInt(usize);
+    try printer("buffer size {d}\n", .{buffer_size});
     const buffer = allocator.alloc(u8, buffer_size) catch {
         try printer("Failed to allocate memory for file buffer.\n", .{});
         return;
@@ -31,11 +32,10 @@ pub fn main() !void {
     // _=bytesRead; // Suppress unused variable warning, since we don't do anything with the buffer in this example.
     defer allocator.free(buffer);
 
-    try printer("Read {d} bytes from file '{s}'.\n", .{bytesRead, filePath});
-
+    try printer("Read {d} bytes from file '{s}'.\n", .{ bytesRead, filePath });
 }
 
-fn printer(comptime fmt:[]const u8, arg: anytype) !void {
+fn printer(comptime fmt: []const u8, arg: anytype) !void {
     var stdout_buf: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buf);
     const stdout: *std.io.Writer = &stdout_writer.interface;
