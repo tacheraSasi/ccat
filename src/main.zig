@@ -39,18 +39,18 @@ pub fn main(init: std.process.Init) !void {
     const buffer = try allocator.alloc(u8, file_size);
     defer allocator.free(buffer);
 
-    const bytesRead = try file.read(io, buffer);
-    try copy(allocator, io, buffer[0..bytesRead]);
+    const bytesRead = try file.readPositionalAll(io, buffer, 0);
+    try copy(io, buffer[0..bytesRead]);
 }
 
-fn copy(allocator: std.mem.Allocator, io: std.Io, content: []const u8) !void {
+fn copy(io: std.Io, content: []const u8) !void {
     const clipboard_cmd = switch (builtin.os.tag) {
         .macos => "pbcopy",
         .linux => blk: {
-            if (isCommandAvailable(allocator, io, "wl-copy")) {
+            if (isCommandAvailable(io, "wl-copy")) {
                 break :blk "wl-copy";
             }
-            if (isCommandAvailable(allocator, io, "xclip")) {
+            if (isCommandAvailable(io, "xclip")) {
                 break :blk "xclip -selection clipboard";
             }
             try printErr(io, "Error: No clipboard tool found. Install 'xclip' or 'wl-copy'.\n", .{});
@@ -62,24 +62,27 @@ fn copy(allocator: std.mem.Allocator, io: std.Io, content: []const u8) !void {
         },
     };
 
-    var child = std.process.Child.init(&[_][]const u8{clipboard_cmd}, allocator);
-    child.stdin_behavior = .Pipe;
-    try child.spawn();
+    var child = try std.process.spawn(io, .{
+        .argv = &[_][]const u8{clipboard_cmd},
+        .stdin = .pipe,
+    });
 
-    try child.stdin.?.writeAll(io, content);   // writeAll now takes io
+    try child.stdin.?.writeStreamingAll(io, content);
     child.stdin.?.close(io);
     child.stdin = null;
 
-    _ = try child.wait();
+    _ = try child.wait(io);
     try printer(io, "Copied\n", .{});
 }
 
-fn isCommandAvailable(allocator: std.mem.Allocator, io: std.Io, cmd: []const u8) bool {
-    var child = std.process.Child.init(&[_][]const u8{ "which", cmd }, allocator);
-    child.stdout_behavior = .Ignore;
-    child.stderr_behavior = .Ignore;
-    const result = child.spawnAndWait() catch return false;
-    return switch (result) {
+fn isCommandAvailable(io: std.Io, cmd: []const u8) bool {
+    var child = std.process.spawn(io, .{
+        .argv = &[_][]const u8{ "which", cmd },
+        .stdout = .ignore,
+        .stderr = .ignore,
+    }) catch return false;
+    const term = child.wait(io) catch return false;
+    return switch (term) {
         .Exited => |code| code == 0,
         else => false,
     };
