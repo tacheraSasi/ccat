@@ -5,14 +5,30 @@ pub fn main(init: std.process.Init) !void {
     const allocator = init.gpa;
     const io = init.io;
 
-    // Get arguments via the new Init API
     const args = try init.minimal.args.toSlice(allocator);
     defer allocator.free(args);
 
+    var content = std.mem.zeroes([]u8);
+
+    var stdin_buffer: [4096]u8 = undefined;
+    var stdin_reader = std.Io.File.stdin().reader(io, &stdin_buffer);
+    const stdin = &stdin_reader.interface;
+    
     if (args.len < 2) {
-        try printer(io, "Usage: {s} <file_path>\n", .{args[0]});
+        const stdin_content = stdin.allocRemaining(allocator, .unlimited) catch |err| {
+            try printErr(io, "Error: failed reading stdin: {s}\n", .{@errorName(err)});
+            return;
+        };
+        defer allocator.free(stdin_content);
+    
+        if (stdin_content.len == 0) {
+            try printErr(io, "Error: stdin is empty, nothing to copy.\n", .{});
+            return;
+        }
+        try copy(io, stdin_content);
         return;
     }
+
 
     const filePath = args[1];
 
@@ -40,7 +56,8 @@ pub fn main(init: std.process.Init) !void {
     defer allocator.free(buffer);
 
     const bytesRead = try file.readPositionalAll(io, buffer, 0);
-    try copy(io, buffer[0..bytesRead]);
+    content = buffer[0..bytesRead];
+    try copy(io, content);
 }
 
 fn copy(io: std.Io, content: []const u8) !void {
