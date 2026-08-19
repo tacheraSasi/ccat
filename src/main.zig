@@ -4,6 +4,7 @@ const builtin = @import("builtin");
 pub fn main(init: std.process.Init) !void {
     const allocator = init.gpa;
     const io = init.io;
+    var content = std.mem.zeroes([]u8);
 
     // Get arguments via the new Init API
     const args = try init.minimal.args.toSlice(allocator);
@@ -40,7 +41,8 @@ pub fn main(init: std.process.Init) !void {
     defer allocator.free(buffer);
 
     const bytesRead = try file.readPositionalAll(io, buffer, 0);
-    try copy(io, buffer[0..bytesRead]);
+    content = buffer[0..bytesRead];
+    try copy(io, content);
 }
 
 fn copy(io: std.Io, content: []const u8) !void {
