@@ -105,6 +105,7 @@ fn isCommandAvailable(io: std.Io, cmd: []const u8) bool {
     };
 }
 
+/// Prints a formatted string to stdout.
 fn printer(io: std.Io, comptime fmt: []const u8, args: anytype) !void {
     var buf: [1024]u8 = undefined;
     var writer = std.Io.File.stdout().writer(io, &buf);
@@ -113,6 +114,7 @@ fn printer(io: std.Io, comptime fmt: []const u8, args: anytype) !void {
     try stdout.flush();
 }
 
+/// Prints a formatted string to stderr.
 fn printErr(io: std.Io, comptime fmt: []const u8, args: anytype) !void {
     var buf: [1024]u8 = undefined;
     var writer = std.Io.File.stderr().writer(io, &buf);
