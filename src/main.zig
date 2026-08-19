@@ -22,7 +22,7 @@ pub fn main(init: std.process.Init) !void {
         defer allocator.free(stdin_content);
     
         if (stdin_content.len == 0) {
-            try printErr(io, "Error: stdin is empty, nothing to copy.\n", .{});
+            try printErr(io, "\nError: stdin is empty, nothing to copy.\n", .{});
             return;
         }
         try copy(io, stdin_content);
